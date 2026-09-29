@@ -61,6 +61,15 @@ aside .hint{color:var(--muted);font-size:.86rem;margin:0 0 12px}
 .gs .meta{display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;margin-top:10px}
 .uc .body{flex:1;min-width:0}
 .uc .meta{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-top:7px}
+.stackbox{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:0 0 12px}
+.stackname{font-size:.78rem;color:var(--muted);margin-bottom:6px}
+.stackname b{color:var(--ink)}
+.stacklink{display:flex;justify-content:space-between;gap:8px;text-decoration:none;color:var(--ink);font-weight:600;font-size:.88rem;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-bottom:6px}
+.stacklink:hover{border-color:var(--accent)}
+.stacklink.ask{border-color:var(--focus)}
+.stacklink.ask:hover{background:color-mix(in srgb,var(--focus) 12%,var(--panel))}
+.askhint{display:block;color:var(--muted);font-size:.76rem;margin:2px 0 4px}
+.askprompt{margin:0;font-size:.8rem;line-height:1.45;color:var(--muted);border-left:3px solid var(--focus);padding:4px 8px;background:var(--panel);border-radius:0 6px 6px 0}
 .side-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .btn{border:1px solid var(--line);background:var(--chip);border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.86rem}
 .btn:hover{border-color:var(--accent)}
@@ -188,7 +197,7 @@ footer{color:var(--muted);font-size:.8rem;margin-top:18px}
       <section class="detail" id="detail" aria-live="polite"></section>
     </main>
   </div>
-  <footer>Diagram: Grafana Cloud network flows (unchanged original). Ports, hostnames and requirements summarise the Grafana Cloud documentation at the time of writing; always confirm against the linked pages and your stack's region.</footer>
+  <footer>Diagram: Grafana Cloud network flows (unchanged original). Ports, hostnames and requirements summarise the Grafana Cloud documentation at the time of writing; always confirm against the linked pages and your stack's region. When the page is served from <code>&lt;stack&gt;.grafana.net</code>, each Getting started section links straight into that stack.</footer>
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
 
@@ -359,6 +368,9 @@ const GLOBAL_PREREQS=[
   'Users and teams invited, or SSO (SAML/OAuth) configured',
 ];
 
+const GLOBAL_STACK=[{t:'Create access policy tokens',p:'/a/grafana-auth-app'},{t:'Browse all connections and integrations',p:'/connections/add-new-connection'}];
+const GLOBAL_ASK='I am onboarding to Grafana Cloud. Help me get this stack ready: which access policy tokens and scopes to create for Grafana Alloy, private probes and PDC, the outbound network access our firewall needs, and how to invite users and set up SSO.';
+
 const USECASES=[
   {id:'pubsyn',group:'Synthetic monitoring',title:'Public website & API uptime',
    q:'Are our public sites and APIs up, from where, and how fast?',
@@ -367,7 +379,9 @@ const USECASES=[
    prereqs:['List of public URLs/hosts and expected responses','Probe locations close to your users chosen','WAF/CDN rules allowing probe traffic, if targets filter by source'],
    steps:['Open Testing & synthetics → Synthetics and initialise the app.','Create checks (HTTP, DNS, TCP, Ping, Traceroute, multi-step, k6 scripted or browser).','Select public probe locations and a frequency.','Use the built-in dashboards and add alerts / SLOs on uptime and latency.'],
    deploy:[],network:['None on your side — only the targets must be reachable from the internet'],
-   signals:['Metrics','Logs'],docs:['sm','smchecks','alerting']},
+   signals:['Metrics','Logs'],docs:['sm','smchecks','alerting'],
+   stack:[{t:'Create a check in Synthetic Monitoring',p:'/a/grafana-synthetic-monitoring-app/checks/choose-type'}],
+   ask:'Help me set up Synthetic Monitoring for our public websites and APIs. Walk me through creating my first HTTP check, choosing public probe locations close to our users, and adding an alert on availability and latency.'},
 
   {id:'privsyn',group:'Synthetic monitoring',title:'Internal endpoint checks',
    q:'Our apps and APIs are on the intranet; I need uptime checks from inside.',
@@ -377,7 +391,9 @@ const USECASES=[
    steps:['In Synthetics → Probes, add a private probe and copy its token.','Deploy the synthetic-monitoring-agent (Docker, K8s manifest or Linux package) with the token and API server URL.','Confirm the probe shows as online.','Create checks and select the private probe as location.'],
    deploy:['Synthetic Monitoring agent (private probe)'],
    network:['Outbound TCP 443 to synthetic-monitoring-grpc-<region>.grafana.net','Outbound TCP 443 to synthetic-monitoring-api-<region>.grafana.net','Probe → internal targets on the ports being tested'],
-   signals:['Metrics','Logs'],docs:['smprivate','sm','smchecks']},
+   signals:['Metrics','Logs'],docs:['smprivate','sm','smchecks'],
+   stack:[{t:'Add a private probe',p:'/a/grafana-synthetic-monitoring-app/probes/new'}],
+   ask:'Help me set up a Synthetic Monitoring private probe inside our network. Explain how to register the probe, deploy the agent with Docker or Kubernetes, which outbound endpoints to allow for my stack region, and how to create my first check against an internal endpoint.'},
 
   {id:'cloudq',group:'Query data where it lives',title:'Cloud data sources',
    q:'Dashboards on top of CloudWatch, Azure Monitor, GCP, BigQuery or SaaS data.',
@@ -386,7 +402,9 @@ const USECASES=[
    prereqs:['Read-only cloud identity for Grafana (IAM role, service principal, service account or API key)','Data source plugin installed on the stack','Public reachability of the source (otherwise use PDC)'],
    steps:['Create the read-only identity in your cloud account.','In Connections → Data sources, add the data source and paste the credentials.','Save & test, then import the plugin\'s bundled dashboards or build your own.'],
    deploy:[],network:['Grafana Cloud → cloud APIs over HTTPS (managed by Grafana)'],
-   signals:['Metrics','Logs'],docs:['datasources','plugins']},
+   signals:['Metrics','Logs'],docs:['datasources','plugins'],
+   stack:[{t:'Add a data source',p:'/connections/datasources/new'}],
+   ask:'Help me connect a cloud data source (for example AWS CloudWatch, Azure Monitor or Google Cloud Monitoring) to this stack so Grafana queries it in place. Explain the read-only credentials I need to create and how to configure and test the data source.'},
 
   {id:'pdc',group:'Query data where it lives',title:'Private data sources via PDC',
    q:'Query on-prem Prometheus, Loki, Elasticsearch, Splunk or SQL without opening inbound ports.',
@@ -396,7 +414,9 @@ const USECASES=[
    steps:['Connections → Private data source connect: create a network and a token.','Deploy the pdc-agent (two or more replicas) with the token, cluster and stack ID.','Check the agent shows as connected.','On each data source, choose the PDC network under "Private data source connect", then Save & test.'],
    deploy:['PDC agent (≥ 2 replicas)'],
    network:['Outbound TCP 22 to private-datasource-connect.<cluster>.grafana.net (older clusters: private-datasource-connect-<cluster>.grafana.net)','Outbound TCP 443 to private-datasource-connect-api.<cluster>.grafana.net','PDC agent → internal data sources on their ports'],
-   signals:['Metrics','Logs','Traces'],docs:['pdcconf','pdc','datasources']},
+   signals:['Metrics','Logs','Traces'],docs:['pdcconf','pdc','datasources'],
+   stack:[{t:'Set up private data source connect',p:'/connections/private-data-source-connections'}],
+   ask:'Help me set up Private data source connect (PDC) to query an on-prem data source from this stack. Walk me through creating a PDC network and token, deploying two PDC agents, the outbound endpoints and ports to allow for my cluster, and configuring a data source to use PDC.'},
 
   {id:'apm',group:'Applications',title:'Backend application observability',
    q:'Traces, RED metrics and logs for our services with OpenTelemetry.',
@@ -406,7 +426,9 @@ const USECASES=[
    steps:['Deploy Alloy with otelcol.receiver.otlp (4317/4318) and an OTLP exporter to Grafana Cloud.','Add auto-instrumentation or the SDK to each service.','Set OTEL_SERVICE_NAME, deployment.environment and point OTEL_EXPORTER_OTLP_ENDPOINT at Alloy.','Open Application Observability and check services appear.'],
    deploy:['Grafana Alloy','OpenTelemetry SDK / auto-instrumentation'],
    network:['App → Alloy on TCP 4317 (gRPC) / 4318 (HTTP)','Alloy → Grafana Cloud OTLP endpoint over TCP 443'],
-   signals:['Traces','Metrics','Logs'],docs:['appinst','appo11y','otlprecv','otlp']},
+   signals:['Traces','Metrics','Logs'],docs:['appinst','appo11y','otlprecv','otlp'],
+   stack:[{t:'Open Application Observability',p:'/a/grafana-app-observability-app'},{t:'Find the OpenTelemetry connection',p:'/connections/add-new-connection?search=opentelemetry'}],
+   ask:'Help me instrument a backend service with OpenTelemetry and send traces, metrics and logs to this stack through Grafana Alloy. Show me the Alloy OTLP receiver and exporter configuration, the OTEL_* environment variables to set, and how to check the service appears in Application Observability.'},
 
   {id:'rum',group:'Applications',title:'Frontend / real-user monitoring',
    q:'Web vitals, JS errors and user sessions from real browsers.',
@@ -416,7 +438,9 @@ const USECASES=[
    steps:['Create the app in Frontend Observability and copy the snippet.','Add @grafana/faro-web-sdk (and tracing instrumentation if needed) or the CDN snippet.','Deploy and generate traffic; check sessions and web vitals appear.','Optionally connect front-end traces to backend traces.'],
    deploy:['Faro Web SDK in the front-end bundle'],
    network:['Users\' browsers → Faro collector over HTTPS (TCP 443)'],
-   signals:['Logs','Traces','Metrics'],docs:['feinst','feo11y']},
+   signals:['Logs','Traces','Metrics'],docs:['feinst','feo11y'],
+   stack:[{t:'Open Frontend Observability',p:'/a/grafana-kowalski-app'}],
+   ask:'Help me set up Frontend Observability for our web application. Walk me through creating the app, adding the Faro Web SDK, configuring allowed origins and our Content-Security-Policy, and checking that sessions and web vitals arrive.'},
 
   {id:'net',group:'Infrastructure',title:'Network devices (SNMP & syslog)',
    q:'Interface traffic, errors and logs from routers, switches and firewalls.',
@@ -426,7 +450,9 @@ const USECASES=[
    steps:['Deploy Alloy in the management network.','Configure prometheus.exporter.snmp with targets, modules and auth, and scrape it.','Configure loki.source.syslog with a listener port.','Point devices\' syslog at Alloy; install the SNMP integration dashboards.'],
    deploy:['Grafana Alloy (SNMP exporter + syslog receiver)'],
    network:['Alloy → devices UDP 161 (SNMP)','Devices → Alloy on the syslog listener port (UDP/TCP)','Alloy → Grafana Cloud over TCP 443'],
-   signals:['Metrics','Logs'],docs:['snmpint','snmpexp','syslog']},
+   signals:['Metrics','Logs'],docs:['snmpint','snmpexp','syslog'],
+   stack:[{t:'Set up the SNMP integration',p:'/connections/add-new-connection?search=snmp'},{t:'Find the syslog connection',p:'/connections/add-new-connection?search=syslog'}],
+   ask:'Help me monitor our network devices with Grafana Alloy. Give me an Alloy configuration that polls devices with prometheus.exporter.snmp (SNMP v2c and v3), receives syslog with loki.source.syslog, and forwards everything to this stack, plus the firewall rules I need.'},
 
   {id:'mw',group:'Infrastructure',title:'Middleware (Kafka, NGINX, JVM…)',
    q:'Health and throughput of brokers, web servers and caches.',
@@ -436,7 +462,9 @@ const USECASES=[
    steps:['Pick the integration (Kafka, RabbitMQ, NGINX, Redis, Tomcat…) in Connections.','Enable the metrics endpoint/exporter on the middleware.','Add the scrape config the integration generates to Alloy.','Install the integration\'s dashboards and alerts.'],
    deploy:['Grafana Alloy','Exporter where needed (e.g. JMX exporter)'],
    network:['Alloy → middleware metrics port','Alloy → Grafana Cloud over TCP 443'],
-   signals:['Metrics','Logs'],docs:['integrations','kafka','alloycloud']},
+   signals:['Metrics','Logs'],docs:['integrations','kafka','alloycloud'],
+   stack:[{t:'Browse integrations (Kafka, RabbitMQ, NGINX…)',p:'/connections/add-new-connection'}],
+   ask:'Help me monitor our middleware (for example Kafka, RabbitMQ, NGINX or a JVM application) with Grafana Alloy. Tell me which integration to use, how to expose the metrics endpoint, and the Alloy scrape configuration to send the metrics to this stack.'},
 
   {id:'db',group:'Infrastructure',title:'SQL database observability',
    q:'Query performance and health of MySQL, PostgreSQL and other databases.',
@@ -446,7 +474,9 @@ const USECASES=[
    steps:['Create the monitoring user and enable the statistics extensions.','Configure Alloy (database_observability / exporter components) with the DSN.','Forward to Grafana Cloud and open Database Observability or the integration dashboards.'],
    deploy:['Grafana Alloy (DB exporter)'],
    network:['Alloy → DB port (5432, 3306, 1433, 1521…)','Alloy → Grafana Cloud over TCP 443'],
-   signals:['Metrics','Logs'],docs:['dbo11ystart','dbo11y','mysqlexp','pgexp']},
+   signals:['Metrics','Logs'],docs:['dbo11ystart','dbo11y','mysqlexp','pgexp'],
+   stack:[{t:'Open Database Observability',p:'/a/grafana-dbo11y-app'},{t:'Find database integrations',p:'/connections/add-new-connection?search=sql'}],
+   ask:'Help me set up Database Observability for our PostgreSQL or MySQL databases. Explain the monitoring user and grants to create, the extensions to enable, and the Grafana Alloy configuration to send the data to this stack.'},
 
   {id:'host',group:'Infrastructure',title:'Hosts & Kubernetes',
    q:'CPU, memory, disk, logs of VMs, bare metal and Kubernetes clusters.',
@@ -456,7 +486,9 @@ const USECASES=[
    steps:['Linux/Windows: follow the Linux Server or Windows integration to install Alloy.','Kubernetes: Kubernetes Monitoring → Configure, deploy the k8s-monitoring Helm chart.','Verify data in the integration dashboards or Kubernetes Monitoring app.','Optionally enrol agents in Fleet Management.'],
    deploy:['Grafana Alloy on each host / Helm chart on each cluster'],
    network:['Alloy → Grafana Cloud over TCP 443'],
-   signals:['Metrics','Logs'],docs:['linux','windows','k8s','fleet']},
+   signals:['Metrics','Logs'],docs:['linux','windows','k8s','fleet'],
+   stack:[{t:'Set up the Linux Server integration',p:'/connections/add-new-connection?search=linux'},{t:'Set up the Windows integration',p:'/connections/add-new-connection?search=windows'},{t:'Configure Kubernetes Monitoring',p:'/a/grafana-k8s-app'}],
+   ask:'Help me start monitoring our Linux and Windows hosts and Kubernetes clusters with Grafana Alloy. Walk me through installing Alloy on a host, deploying the Kubernetes Monitoring Helm chart, and checking the data in this stack.'},
 ];
 
 /* =========================================================
@@ -467,6 +499,17 @@ const state={selected:new Set(store.get('gco.sel',[])),focus:store.get('gco.focu
 if(state.focus && !((state.focus.kind==='uc'&&USECASES.some(u=>u.id===state.focus.id))||(state.focus.kind==='node'&&NODES.some(n=>n.id===state.focus.id))||(state.focus.kind==='edge'&&EDGES.some(e=>e.id===state.focus.id))||state.focus.kind==='start')) state.focus=null;
 function persist(){store.set('gco.sel',[...state.selected]);store.set('gco.focus',state.focus)}
 
+/* Grafana Cloud stack detection: <stack>.grafana.net, or ?stack=<name> to preview the links elsewhere */
+const STACK=(()=>{
+  let loc=location;
+  try{if(window.parent!==window&&window.parent.location.hostname) loc=window.parent.location}catch(e){}
+  const m=loc.hostname.match(/^([a-z0-9][a-z0-9-]*)\.grafana\.net$/i);
+  if(m) return {name:m[1],base:loc.origin};
+  const q=new URLSearchParams(loc.search).get('stack');
+  if(q&&/^[a-z0-9][a-z0-9-]*$/i.test(q)) return {name:q,base:'https://'+q+'.grafana.net'};
+  return null;
+})();
+
 /* theme */
 function applyTheme(t){
   if(t==='auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
@@ -474,7 +517,7 @@ function applyTheme(t){
   store.set('gco.theme',t);
 }
 document.querySelectorAll('.theme button').forEach(b=>b.addEventListener('click',()=>applyTheme(b.dataset.t)));
-applyTheme(store.get('gco.theme','auto'));
+applyTheme(store.get('gco.theme',window.GCO_DEFAULT_THEME||'auto'));
 
 /* =========================================================
    Overlay
@@ -641,13 +684,23 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const fmt=s=>esc(s).replace(/([\w.-]*&lt;[\w]+&gt;[\w.-]*(?::\d+)?|\b(?:OTEL_[A-Z_]+|pg_stat_statements|performance_schema|pg_monitor|deployment\.environment|connect-src|\*\.grafana\.net|@grafana\/faro-web-sdk|otelcol\.receiver\.otlp|prometheus\.exporter\.snmp|loki\.source\.syslog)\b)/g,'<code>$1</code>');
 const docList=keys=>`<ul class="docs">${keys.map(k=>`<li><a href="${DOCS[k].u}" target="_blank" rel="noopener"><span>${esc(DOCS[k].t)}<small>${esc(DOCS[k].u.replace('https://',''))}</small></span></a></li>`).join('')}</ul>`;
 const prereqList=items=>`<ol class="prereqs">${items.map(t=>`<li><span>${fmt(t)}</span></li>`).join('')}</ol>`;
+function stackBox(links,ask){
+  if(!STACK) return '';
+  return `<div class="stackbox">
+    <div class="stackname">In your stack <b>${esc(STACK.name)}</b></div>
+    ${links.map(l=>`<a class="stacklink" href="${esc(STACK.base+l.p)}" target="_blank" rel="noopener">${esc(l.t)} <span aria-hidden="true">→</span></a>`).join('')}
+    <a class="stacklink ask" href="${esc(STACK.base)}/a/grafana-assistant-app" target="_blank" rel="noopener" data-ask="${esc(ask)}">✦ Get started with Grafana Assistant <span aria-hidden="true">→</span></a>
+    <small class="askhint">Copies this prompt and opens Assistant. Paste it to start:</small>
+    <blockquote class="askprompt">${esc(ask)}</blockquote>
+  </div>`;
+}
 const prereqHead=items=>`<h4>Prerequisites<span class="count">${items.length}</span></h4>`;
 function startDetail(){
   return `<div class="kicker">Before you start</div><h2>Grafana Cloud account prerequisites</h2>
   <p class="lead">These apply to every use case. Once they are in place, pick use cases on the left or click on the diagram. Everything on the customer side connects <em>out</em> to Grafana Cloud; no inbound firewall rules are required.</p>
   <div class="cols">
     <div>${prereqHead(GLOBAL_PREREQS)}${prereqList(GLOBAL_PREREQS)}</div>
-    <div><h4>Documentation</h4>${docList(['getstarted','policies','allowlist','alloycloud'])}</div>
+    <div>${STACK?`<h4>Getting started</h4>${stackBox(GLOBAL_STACK,GLOBAL_ASK)}<h4 style="margin-top:14px">Documentation</h4>`:'<h4>Documentation</h4>'}${docList(['getstarted','policies','allowlist','alloycloud'])}</div>
     <div><h4>How to read the diagram</h4>${Object.values(FLOWTYPES).map(v=>`<p style="margin:0 0 8px"><span class="flowkey" style="background:${v.color}"></span><b>${v.name}</b> <span style="color:var(--muted)">— ${v.desc}.</span></p>`).join('')}
     <p style="color:var(--muted);font-size:.86rem;margin:10px 0 0">Click a flow type above the diagram to highlight all of its arrows.</p></div>
   </div>`;
@@ -658,7 +711,7 @@ function ucDetail(u){
   <div class="cols">
     <div>${prereqHead(u.prereqs)}${prereqList(u.prereqs)}
       <p style="color:var(--muted);font-size:.84rem;margin:6px 0 0">Plus the <button class="chip" data-start>account prerequisites</button></p></div>
-    <div><h4>Getting started</h4><ol>${u.steps.map(s=>`<li>${fmt(s)}</li>`).join('')}</ol>
+    <div><h4>Getting started</h4>${stackBox(u.stack,u.ask)}<ol>${u.steps.map(s=>`<li>${fmt(s)}</li>`).join('')}</ol>
       <h4 style="margin-top:14px">You deploy</h4>${u.deploy.length?`<ul>${u.deploy.map(s=>`<li>${fmt(s)}</li>`).join('')}</ul>`:'<p style="margin:0">Nothing, fully managed by Grafana Cloud.</p>'}
       <h4 style="margin-top:14px">Network / firewall</h4><ul>${u.network.map(s=>`<li>${fmt(s)}</li>`).join('')}</ul></div>
     <div><h4>Documentation</h4>${docList(u.docs)}
@@ -734,6 +787,11 @@ function renderDetail(){
   detail.querySelectorAll('[data-uc],[data-uc-tab]').forEach(b=>b.addEventListener('click',()=>focus({kind:'uc',id:b.dataset.uc||b.dataset.ucTab})));
   detail.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>{state.selected.add(b.dataset.add);update()}));
   detail.querySelectorAll('[data-start]').forEach(b=>b.addEventListener('click',()=>focus({kind:'start'})));
+  detail.querySelectorAll('[data-ask]').forEach(l=>l.addEventListener('click',()=>{
+    const hint=l.parentElement.querySelector('.askhint');
+    const done=ok=>{if(hint)hint.textContent=ok?'Prompt copied. Paste it into Assistant (Ctrl/Cmd+V):':'Copy this prompt into Assistant:'};
+    try{navigator.clipboard.writeText(l.dataset.ask).then(()=>done(true),()=>done(false))}catch(e){done(false)}
+  }));
   const cp=document.getElementById('copyPlan');
   if(cp) cp.addEventListener('click',async()=>{
     const md=planMarkdown(), msg=document.getElementById('copied');
