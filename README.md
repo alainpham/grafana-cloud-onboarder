@@ -83,6 +83,7 @@ When `grafana-cloud-network-flows.svg` changes, the page has to be updated too:
 - **Embedded copy:** replace the `<svg version="1.1" …>…</svg>` element in the HTML with the new file's contents, unchanged.
 - **Overlay coordinates:** check `NODES[].r` (box hotspots) and `EDGES[].d` / `EDGES[].lbl` (arrow paths and label boxes). They use the SVG's own `960 × 540` coordinates. An arrow without a label box uses `lbl:null`.
 - **Use cases:** add any new arrow ids to the `edges` list of the use cases they belong to.
+- **New arrow colours:** a new kind of flow (for example the red *Poll* arrow) needs an entry in `FLOWTYPES`. That entry sets its name, colour and legend button.
 
 ### Changing the dashboard layout
 
