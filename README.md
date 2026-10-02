@@ -111,7 +111,7 @@ Grafana's Content-Security-Policy (`'strict-dynamic'` with a nonce) blocks inlin
 - `const HTML` holds the markup without its script and becomes the frame content.
 - `const CODE` holds the script, which runs through the frame's own `Function` constructor.
 
-The frame resizes to its content, and the dashboard panel handles scrolling.
+The page sizes the frame to the panel's visible area and follows panel resizes. Like the standalone page, it never scrolls as a whole: the use-case list and the main column scroll independently. On narrow, phone-width layouts it falls back to normal page scrolling.
 
 Inside the panel, the page:
 

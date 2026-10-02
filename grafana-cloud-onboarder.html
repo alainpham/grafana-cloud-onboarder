@@ -29,9 +29,11 @@ button{font:inherit;color:inherit}
 a{color:var(--focus)}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .wrap{max-width:1480px;margin:0 auto;padding:20px 16px}
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
+
+header.top{display:flex;flex-wrap:nowrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
 header.top h1{font-size:1.6rem;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.01em}
-header.top p{margin:.35rem 0 0;color:var(--muted);max-width:70ch}
+header.top > div:first-child{flex:1;min-width:0}
+header.top p{margin:.35rem 0 0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .theme{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px}
 .theme button{border:0;background:transparent;border-radius:999px;padding:4px 12px;cursor:pointer;font-size:.85rem;color:var(--muted)}
 .theme button[aria-pressed="true"]{background:var(--chip);color:var(--ink);font-weight:600}
@@ -40,7 +42,7 @@ header.top p{margin:.35rem 0 0;color:var(--muted);max-width:70ch}
 @media (max-width:1000px){.layout{grid-template-columns:1fr}}
 
 aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
-@media (min-width:1001px){aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+
 aside h2{font-size:1.05rem;margin:0 0 4px}
 aside .hint{color:var(--muted);font-size:.86rem;margin:0 0 12px}
 .search{width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;margin-bottom:6px}
@@ -204,12 +206,20 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:
 /* use-case pop-up (opened from the onboarding plan table). Positioned in document coordinates
    so it also appears next to the click when the page runs in a tall, auto-sized Grafana frame. */
 .ucdlg{position:fixed;inset:0;margin:auto;height:fit-content;width:min(1080px,calc(100vw - 32px));max-height:min(85vh,780px);overflow:auto;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);box-shadow:0 24px 70px rgba(0,0,0,.45)}
-.ucdlg.framed{position:absolute;inset:auto 0 auto 0;margin:0 auto;max-height:780px}
 .ucdlg::backdrop{background:rgba(10,12,16,.55)}
 .ucdlg .dlg-body{border:0;border-radius:0;padding:22px 24px 24px}
 .ucdlg .dlg-close{position:sticky;top:10px;float:right;margin:10px 10px 0 0;z-index:1;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--chip);cursor:pointer;font-size:1rem}
 .ucdlg .dlg-close:hover{border-color:var(--accent)}
-footer{color:var(--muted);font-size:.8rem;margin-top:18px}
+footer{color:var(--muted);font-size:.8rem;margin-top:0}
+/* app shell: the page never scrolls; the sidebar and the main column scroll on their own */
+@media (min-width:1001px){
+  html,body{height:100%;overflow:hidden}
+  .wrap{height:100%;display:flex;flex-direction:column;padding:16px 16px 0}
+  header.top{flex:none}
+  .layout{flex:1;min-height:0;grid-template-rows:minmax(0,1fr);align-items:stretch}
+  aside{min-height:0;overflow:auto;margin-bottom:16px}
+  main{min-height:0;overflow:auto;padding:0 4px 16px 0;scrollbar-gutter:stable}
+}
 </style>
 </head>
 <body>
@@ -217,7 +227,7 @@ footer{color:var(--muted);font-size:.8rem;margin-top:18px}
   <header class="top">
     <div>
       <h1>Grafana Cloud onboarding explorer</h1>
-      <p>Pick what you want to observe, or click any box or arrow on the network-flow diagram. You get the prerequisites to line up, the setup steps, and links to the matching Grafana Cloud documentation.</p>
+      <p title="Pick a use case or click any box or arrow on the diagram to get its prerequisites, setup steps and Grafana Cloud docs.">Pick a use case or click any box or arrow on the diagram to get its prerequisites, setup steps and Grafana Cloud docs.</p>
     </div>
     <div class="theme" role="group" aria-label="Color theme">
       <button data-t="auto" aria-pressed="true">Auto</button>
@@ -255,9 +265,9 @@ footer{color:var(--muted);font-size:.8rem;margin-top:18px}
       </section>
 
       <section class="detail" id="detail" aria-live="polite"></section>
+      <footer>Diagram: Grafana Cloud network flows (unchanged original). Ports, hostnames and requirements summarise the Grafana Cloud documentation at the time of writing; always confirm against the linked pages and your stack's region. When the page is served from <code>&lt;stack&gt;.grafana.net</code>, each Getting started section links straight into that stack.</footer>
     </main>
   </div>
-  <footer>Diagram: Grafana Cloud network flows (unchanged original). Ports, hostnames and requirements summarise the Grafana Cloud documentation at the time of writing; always confirm against the linked pages and your stack's region. When the page is served from <code>&lt;stack&gt;.grafana.net</code>, each Getting started section links straight into that stack.</footer>
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
 <dialog id="ucDialog" class="ucdlg" aria-labelledby="ucDialogTitle">
@@ -927,17 +937,41 @@ function fillUcDialog(id){
 // Inside the Grafana panel the page is a frame as tall as its content, so a viewport-centred
 // pop-up could land off-screen: there it is placed next to the clicked row instead.
 const FRAMED=window.parent!==window;
-if(FRAMED) dlg.classList.add('framed');
+
+// Inside a Grafana panel, size the frame to the panel's visible area (not to the page's content),
+// so the app shell fits the panel and only the sidebar and main column scroll.
+if(FRAMED){
+  try{
+    const P=window.parent, frame=window.frameElement;
+    let box=frame&&frame.parentElement;
+    while(box&&box!==P.document.body&&!/(auto|scroll)/.test(P.getComputedStyle(box).overflowY)) box=box.parentElement;
+    const fit=()=>{
+      let h;
+      if(box&&box!==P.document.body){
+        // visible height of the panel minus where the frame starts inside it and the bottom padding
+        const bs=P.getComputedStyle(box);
+        const offset=frame.getBoundingClientRect().top-box.getBoundingClientRect().top+box.scrollTop;
+        h=box.clientHeight-offset-parseFloat(bs.paddingBottom||0);
+      } else h=P.innerHeight-frame.getBoundingClientRect().top;
+      h=Math.max(360,Math.floor(h));
+      if(frame.style.height!==h+'px') frame.style.height=h+'px';
+    };
+    fit();
+    // keep a reference: an observer created in the parent's realm can otherwise be garbage-collected
+    if(box&&P.ResizeObserver){window.__panelObserver=new P.ResizeObserver(fit);window.__panelObserver.observe(box)}
+    P.addEventListener('resize',fit);
+    setInterval(fit,1000); // backstop for panel resizes the observer misses
+  }catch(e){ /* cross-origin parent: keep the loader's default height */ }
+}
 function openUcDialog(id,anchor){
   fillUcDialog(id);
-  if(FRAMED){
-    const r=anchor?anchor.getBoundingClientRect():{top:0};
-    dlg.style.top=Math.max(16,r.top+scrollY-160)+'px';
-  }
+  // same height as the diagram panel (so it fits a dashboard panel); content scrolls inside
+  const dh=Math.round(document.querySelector('.stage').getBoundingClientRect().height);
+  const h=Math.max(320,Math.min(dh,innerHeight-32));
+  dlg.style.height=dlg.style.maxHeight=h+'px';
   if(!dlg.open){try{dlg.showModal()}catch(e){dlg.setAttribute('open','')}}
   dlg.scrollTop=0;
   dlg.querySelector('.dlg-close').focus({preventScroll:true});
-  if(FRAMED) dlg.scrollIntoView({block:'nearest'});
 }
 function closeUcDialog(){if(dlg.open)dlg.close();else dlg.removeAttribute('open')}
 dlg.querySelector('.dlg-close').addEventListener('click',closeUcDialog);
